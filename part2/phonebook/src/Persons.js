@@ -4,7 +4,7 @@ import Person from './Person'
 function Persons(props) {
   return (
     <div>
-      {props.persons.map(person => <Person name={person.name} number={person.number} />)}
+      {props.persons.map(person => <Person key={person.name} name={person.name} number={person.number} />)}
     </div>
   )
 }
