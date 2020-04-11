@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Filter from './Filter'
 import PersonForm from "./PersonForm"
 import Persons from './Persons'
-import axios from 'axios'
+import contactService from './services/contactService'
 
 const App = () => {
   const [persons, setPersons] = useState([])
@@ -24,27 +24,44 @@ const App = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    let doesPersonExist = persons.filter(person => person.name === newName).length
-      ||
-      persons.filter(person => person.number === newNumber).length
-    if (doesPersonExist) {
-      alert('This person or number already exists!')
-    } else {
+    let doesPersonExist = persons.filter(person => person.name === newName).length;
+    let doesNumberExist = persons.filter(person => person.number === newNumber).length
+    if (doesNumberExist) {
+      alert('This number already exists!')
+    }
+    else if (doesPersonExist) {
+      if (window.confirm(`${newName} already has a number in phone book. Do you want to replace the old number with the new one?`)) {
+        const personToUpdate = persons.find(p => p.name === newName)
+        const newPersonObj = { ...personToUpdate, number: newNumber }
+        contactService
+          .updateContact(personToUpdate.id, newPersonObj)
+          .then(returnedContact => setPersons(persons.map(p => p.id !== personToUpdate.id ? p : returnedContact)))
+          setNewName('')
+          setNewNumber('')
+      }
+    }
+    else {
       const personObject = { name: newName, number: newNumber }
-      setPersons(persons.concat(personObject))
+      contactService
+        .createContact(personObject)
+        .then(createdContact => setPersons(persons.concat(createdContact)))
       setNewName('')
       setNewNumber('')
     }
   }
 
+  const handleDelete = id => {
+    if (window.confirm('Do you really want to delete this contact?')) {
+      contactService
+        .deleteContact(id)
+        .then(deletedContact => setPersons(persons.filter(person => person.id !== id)))
+    }
+  }
+
   useEffect(() => {
-    console.log('effect')
-    axios
-      .get('http://localhost:3001/persons')
-      .then(response => {
-        console.log('promise fullfilled')
-        setPersons(response.data)
-      })
+    contactService
+      .getAll()
+      .then(personData => setPersons(personData))
   }, [])
 
   const personsToShow = persons.filter(person => person.name.toLowerCase().includes(newFilter.toLowerCase()))
@@ -60,7 +77,7 @@ const App = () => {
         numberValue={newNumber} handleNumberChange={handleNumberChange}
       />
       <h2>Numbers</h2>
-      <Persons persons={personsToShow} />
+      <Persons persons={personsToShow} handleDelete={handleDelete} />
     </div>
   )
 }

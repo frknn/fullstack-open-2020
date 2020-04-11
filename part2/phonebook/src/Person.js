@@ -3,7 +3,8 @@ import React from 'react'
 function Person(props) {
   return (
     <div>
-      <p>{props.name} - {props.number}</p>
+      <p style={{display:"inline"}}>{props.name} - {props.number}</p>
+      <button onClick={() => props.handleDelete(props.id)}>delete</button>
     </div>
   )
 }
